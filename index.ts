@@ -13,48 +13,40 @@ const defaultOptions: JumpScrollOptions = {
     adjustScrollBehavior: true
 }
 
-let scrollable = true
-let oldScroll = window.scrollY
-
-const jump = ({ jumps }: { jumps: Jumps })=> {
+const jump = ({ jumps, direction }: { jumps: Jumps, direction: boolean })=> {
     const availableJumps = Array.from(jumps).filter(jump => {
         const { bottom, top } = jump.getBoundingClientRect()
 
-        return oldScroll < window.scrollY
-            ? bottom - window.innerHeight > 0
-            : top < 0
+        return direction
+            ? top < 0
+            : bottom - window.innerHeight > 0
     });
 
-    const firstJump = (oldScroll < window.scrollY ? availableJumps : availableJumps.reverse())[0]
+    const firstJump = (
+        direction 
+            ? availableJumps.reverse()
+            : availableJumps
+    )[0]
 
-    if(firstJump) {
-        firstJump.scrollIntoView()
-    }
+    if(firstJump) { firstJump.scrollIntoView() }
 }
 
-const setupJumps = ({ jumps, options }: setupJumpsInput)=> {
+const listen = ({ jumps, options }: setupJumpsInput)=> {
     options = { ...defaultOptions, ...options }
 
     if(options.adjustScrollBehavior) {
         document.documentElement.style.scrollBehavior = 'smooth'
     }
 
-    window.addEventListener('scroll', e=> {
-        if(!scrollable) return;
-        scrollable = false
+    window.addEventListener('wheel', ({ deltaY })=> {
+        const direction = deltaY < 0
 
-        jump({ jumps })
-
-        oldScroll = window.scrollY
-    })
-
-    window.addEventListener('scrollend',()=> {
-        scrollable = true
+        jump({ jumps, direction })
     })
 }
 
 export {
-    setupJumps
+    listen
 }
 
 export type {
