@@ -1,49 +1,69 @@
-type Jumps = NodeListOf<HTMLElement>
+import { handleNoCurrentJump } from "./tools/errors"
+import { JumpState } from "./tools/states"
+import defaults from "./json/defaults.json";
+import { Jumps, Options } from "./types";
 
 interface setupJumpsInput {
     jumps: Jumps
-    options?: JumpScrollOptions
+    options?: Options
 }
 
-interface JumpScrollOptions {
-    adjustScrollBehavior: boolean
+const getCurrentJump = ({ jumps }: { jumps: Jumps })=> {
+    const list = Array.from(jumps).filter(jump => {
+        const { bottom } = jump.getBoundingClientRect()
+        const calc = bottom - (window.innerHeight / 2)
+
+        return (
+            calc > 0 && 
+            calc < window.innerHeight
+        )
+    })
+
+    return list.length === 1
+        ? list[0]
+        : null
 }
 
-const defaultOptions: JumpScrollOptions = {
-    adjustScrollBehavior: true
+const getCurrentIndex = ({ jumps, currentJump }: { jumps: Jumps, currentJump: HTMLElement })=> {
+    const index = Array.from(jumps).indexOf(currentJump)
+
+    return index
 }
 
-const jump = ({ jumps, direction }: { jumps: Jumps, direction: boolean })=> {
-    const availableJumps = Array.from(jumps).filter(jump => {
-        const { bottom, top } = jump.getBoundingClientRect()
+const getNextIndex = ({ jumps, direction, currentIndex  }: { jumps: Jumps, direction: boolean, currentIndex: number })=> {
+    const min = 0
+    const max = jumps.length > 0 ? jumps.length - 1 : jumps.length
 
-        return direction
-            ? top < 0
-            : bottom - window.innerHeight > 0
-    });
+    const nextIndex = currentIndex + (direction ? -1 : 1)
 
-    const firstJump = (
-        direction 
-            ? availableJumps.reverse()
-            : availableJumps
-    )[0]
+    if(nextIndex < min || nextIndex > max) return false;
 
-    if(firstJump) { firstJump.scrollIntoView() }
+    return nextIndex
 }
 
 const listen = ({ jumps, options }: setupJumpsInput)=> {
-    options = { ...defaultOptions, ...options }
+    options = { ...defaults, ...options }
 
     if(options.adjustScrollBehavior) {
         document.documentElement.style.scrollBehavior = 'smooth'
     }
+
+    const state = new JumpState({ current: jumps[0] })
 
     window.addEventListener('wheel', e=> {
         e.preventDefault()
 
         const direction = e.deltaY < 0
 
-        jump({ jumps, direction })
+        const currentJump = getCurrentJump({ jumps })
+            ?? handleNoCurrentJump({ state, options })
+        state.current = currentJump
+
+        const currentIndex = getCurrentIndex({ jumps, currentJump })
+
+        const nextIndex = getNextIndex({ jumps, direction, currentIndex })
+
+        if(nextIndex !== false) { jumps[nextIndex].scrollIntoView() }
     }, { passive: false })
 }
 
