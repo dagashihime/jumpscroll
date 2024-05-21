@@ -38,11 +38,13 @@ const listen = ({ jumps, options }: setupJumpsInput)=> {
         document.documentElement.style.scrollBehavior = 'smooth'
     }
 
-    window.addEventListener('wheel', ({ deltaY })=> {
-        const direction = deltaY < 0
+    window.addEventListener('wheel', e=> {
+        e.preventDefault()
+
+        const direction = e.deltaY < 0
 
         jump({ jumps, direction })
-    })
+    }, { passive: false })
 }
 
 export {
