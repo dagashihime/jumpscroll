@@ -51,20 +51,26 @@ const listen = ({ jumps, options }: setupJumpsInput)=> {
     const state = new JumpState({ current: jumps[0] })
 
     window.addEventListener('wheel', e=> {
-        e.preventDefault()
-
         const direction = e.deltaY < 0
 
         const currentJump = getCurrentJump({ jumps })
             ?? handleNoCurrentJump({ state, options })
         state.current = currentJump
 
-        const currentIndex = getCurrentIndex({ jumps, currentJump })
+        const { top, bottom, height } = currentJump.getBoundingClientRect()
 
-        const nextIndex = getNextIndex({ jumps, direction, currentIndex })
+        if((top >= 0 && direction) || (bottom - window.innerHeight <= 0 && !direction)) {
+            e.preventDefault()
 
-        if(nextIndex !== false) { jumps[nextIndex].scrollIntoView() }
+            const currentIndex = getCurrentIndex({ jumps, currentJump })
+    
+            const nextIndex = getNextIndex({ jumps, direction, currentIndex })
+    
+            if(nextIndex !== false) { jumps[nextIndex].scrollIntoView() }
+        }
     }, { passive: false })
+
+    // check on scrollstop if jump needed
 }
 
 export {
