@@ -1,4 +1,3 @@
-import { handleNoCurrentJump } from "./tools/errors"
 import { JumpState } from "./tools/states"
 import defaults from "./json/defaults.json";
 import { Jumps, Options } from "./types";
@@ -8,39 +7,6 @@ interface setupJumpsInput {
     options?: Options
 }
 
-const getCurrentJump = ({ jumps }: { jumps: Jumps })=> {
-    const list = Array.from(jumps).filter(jump => {
-        const { bottom } = jump.getBoundingClientRect()
-        const calc = bottom - (window.innerHeight / 2)
-
-        return (
-            calc > 0 && 
-            calc < window.innerHeight
-        )
-    })
-
-    return list.length === 1
-        ? list[0]
-        : null
-}
-
-const getCurrentIndex = ({ jumps, currentJump }: { jumps: Jumps, currentJump: HTMLElement })=> {
-    const index = Array.from(jumps).indexOf(currentJump)
-
-    return index
-}
-
-const getNextIndex = ({ jumps, direction, currentIndex  }: { jumps: Jumps, direction: boolean, currentIndex: number })=> {
-    const min = 0
-    const max = jumps.length > 0 ? jumps.length - 1 : jumps.length
-
-    const nextIndex = currentIndex + (direction ? -1 : 1)
-
-    if(nextIndex < min || nextIndex > max) return false;
-
-    return nextIndex
-}
-
 const listen = ({ jumps, options }: setupJumpsInput)=> {
     options = { ...defaults, ...options }
 
@@ -48,29 +14,27 @@ const listen = ({ jumps, options }: setupJumpsInput)=> {
         document.documentElement.style.scrollBehavior = 'smooth'
     }
 
-    const state = new JumpState({ current: jumps[0] })
+    const state = new JumpState({ jumps, options })
 
     window.addEventListener('wheel', e=> {
-        const direction = e.deltaY < 0
+        state.direction = e.deltaY < 0
+        state.updateCurrent()
 
-        const currentJump = getCurrentJump({ jumps })
-            ?? handleNoCurrentJump({ state, options })
-        state.current = currentJump
-
-        const { top, bottom, height } = currentJump.getBoundingClientRect()
-
-        if((top >= 0 && direction) || (bottom - window.innerHeight <= 0 && !direction)) {
+        if(state.inPosition) {
             e.preventDefault()
-
-            const currentIndex = getCurrentIndex({ jumps, currentJump })
     
-            const nextIndex = getNextIndex({ jumps, direction, currentIndex })
-    
-            if(nextIndex !== false) { jumps[nextIndex].scrollIntoView() }
+            if(state.validJump) { state.target.scrollIntoView() }
         }
     }, { passive: false })
 
-    // check on scrollstop if jump needed
+    let scrollStop: number | null = null
+    window.addEventListener('scroll', ()=> {
+        if(scrollStop !== null) { clearTimeout(scrollStop) }
+
+        scrollStop = setTimeout(()=> {
+            if(state.inPosition) { state.target.scrollIntoView() }
+        }, 150)
+    })
 }
 
 export {
