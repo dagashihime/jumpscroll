@@ -1,29 +1,47 @@
-import { JumpState } from "./tools/states"
+import JumpState from "./states/jump-state"
 import defaults from "./json/defaults.json";
 import { Jumps, Options } from "./types";
+import OptionsState from "./states/options-state";
 
-interface setupJumpsInput {
-    jumps: Jumps
+interface ConfigureInput {
+    jumps?: Jumps
     options?: Options
 }
 
-const listen = ({ jumps, options }: setupJumpsInput)=> {
-    options = { ...defaults, ...options }
+let JumpScroll: {
+    configure: (input: ConfigureInput)=> typeof JumpScroll
+    listen: (input?: ConfigureInput)=> typeof JumpScroll
+    jump: JumpState
+};
 
-    if(options.adjustScrollBehavior) {
-        document.documentElement.style.scrollBehavior = 'smooth'
+const appOptions = new OptionsState(defaults)
+const jump = new JumpState({ options: appOptions });
+
+const configure: typeof JumpScroll['configure'] = ({ jumps, options })=> {
+    if(jumps) {
+        jump.init(jumps)
     }
 
-    const state = new JumpState({ jumps, options })
+    if(options) {
+        appOptions.set(options)
+    }
+
+    return JumpScroll
+}
+
+const listen: typeof JumpScroll['listen'] = input=> {
+    if(input) { configure(input) }
+
+    if(!jump.isInitialized) jump.init()
 
     window.addEventListener('wheel', e=> {
-        state.direction = e.deltaY < 0
-        state.updateCurrent()
+        jump.direction = e.deltaY < 0
+        jump.updateCurrent()
 
-        if(state.inPosition) {
+        if(jump.inPosition) {
             e.preventDefault()
     
-            if(state.validJump) { state.target.scrollIntoView() }
+            if(jump.validJump && jump.target) { jump.target.scrollIntoView() }
         }
     }, { passive: false })
 
@@ -32,15 +50,17 @@ const listen = ({ jumps, options }: setupJumpsInput)=> {
         if(scrollStop !== null) { clearTimeout(scrollStop) }
 
         scrollStop = setTimeout(()=> {
-            if(state.inPosition) { state.target.scrollIntoView() }
-        }, 150)
+            if(jump.inPosition && jump.validJump && jump.target) { jump.target.scrollIntoView() }
+        }, 100)
     })
+
+    return JumpScroll
 }
 
-export {
+JumpScroll = {
+    configure,
+    jump,
     listen
 }
 
-export type {
-    Jumps
-}
+export default JumpScroll

@@ -1,17 +1,21 @@
 import { Jumps, Options } from "../types"
-import { handleNoCurrentJump } from "./errors"
+import { handleNoCurrentJump, handleNoJumps } from "../tools/errors"
+import OptionsState from "./options-state"
 
 class JumpState {
     public current: HTMLElement | undefined
     public direction: boolean = false
-    private jumps: Jumps
+    private initialized: boolean = false
+    private jumps: Jumps | undefined
     private options: Options
 
-    constructor({ jumps, options }: { jumps: Jumps, options: Options }) {
-        this.jumps = jumps
+    constructor({ options }: { options: OptionsState }) {
         this.options = options
-    
-        this.updateCurrent()
+    }
+
+    get isInitialized(): boolean
+    {
+        return this.initialized
     }
 
     get inPosition(): boolean 
@@ -35,18 +39,32 @@ class JumpState {
             handleNoCurrentJump({ state: this, options: this.options })
             return -1;
         }
+        if(this.jumps === undefined) {
+            handleNoJumps({ options: this.options })
+            return -1
+        }
 
         return Array.from(this.jumps).indexOf(this.current)
     }
 
     // add validation
-    get target(): HTMLElement
+    get target(): HTMLElement | undefined
     {
+        if(this.jumps === undefined) {
+            handleNoJumps({ options: this.options })
+            return undefined
+        }
+
         return this.jumps[this.targetIndex]
     }
 
     get targetIndex(): number
     {
+        if(this.jumps === undefined) {
+            handleNoJumps({ options: this.options })
+            return -1
+        }
+
         const min = 0
         const max = this.jumps.length > 0 ? this.jumps.length - 1 : this.jumps.length
     
@@ -62,8 +80,24 @@ class JumpState {
         return this.targetIndex > -1
     }
 
-    updateCurrent()
-    {
+    init(jumps?: Jumps) {
+        if(this.initialized) return this.initialized;
+
+        this.jumps = jumps 
+            ? jumps
+            : document.querySelectorAll('[data-jump]')
+
+        this.updateCurrent()
+
+        this.initialized = true
+    }
+
+    updateCurrent() {
+        if(this.jumps === undefined) {
+            handleNoJumps({ options: this.options })
+            return;
+        }
+
         const list = Array.from(this.jumps).filter(jump => {
             const { bottom } = jump.getBoundingClientRect()
             const calc = bottom - (window.innerHeight / 2)
@@ -80,6 +114,4 @@ class JumpState {
     }
 }
 
-export {
-    JumpState
-}
+export default JumpState

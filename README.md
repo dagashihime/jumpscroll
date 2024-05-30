@@ -1,8 +1,23 @@
 # example
 
-```js
-import * as Jumpscroll from 'jumpscroll'
+html
+```html
+    <div data-jump>Content</div>
+    <div data-jump>More Content</div>
+```
 
-const jumps = document.body.querySelectorAll('[data-scroll]') as Jumpscroll.Jumps
-Jumpscroll.listen({ jumps })
+js
+```js
+import JumpScroll from 'jumpscroll'
+
+JumpScroll
+    .configure({ options: { adjustScrollBehavior: true }})
+    .listen()
+```
+
+# options
+
+```js
+"adjustScrollBehavior"?: boolean
+"debug"?: boolean
 ```

@@ -1,6 +1,7 @@
-import defaults from "./json/defaults.json";
-
-type Options = typeof defaults
+type Options = {
+    "adjustScrollBehavior"?: boolean
+    "debug"?: boolean
+}
 type Jumps = NodeListOf<HTMLElement>
 
 export type {
