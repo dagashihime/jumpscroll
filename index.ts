@@ -50,7 +50,8 @@ const listen: typeof JumpScroll['listen'] = input=> {
         if(scrollStop !== null) { clearTimeout(scrollStop) }
 
         scrollStop = setTimeout(()=> {
-            if(jump.inPosition && jump.validJump && jump.target) { jump.target.scrollIntoView() }
+            jump.updateCurrent()
+            if(jump.inPosition && jump.current) { jump.current.scrollIntoView() }
         }, 100)
     })
 

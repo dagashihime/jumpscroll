@@ -28,8 +28,8 @@ class JumpState {
         const { top, bottom } = this.current.getBoundingClientRect()
 
         return (
-            ( top >= 0 && this.direction ) || 
-            ( bottom - window.innerHeight <= 0 && !this.direction )
+            top >= 0 || 
+            bottom - window.innerHeight <= 0
         )
     }
 
