@@ -26,10 +26,12 @@ class JumpState {
         }
 
         const { top, bottom } = this.current.getBoundingClientRect()
+        // @ToDo: add option to have custom container
+        const { bottom: containerBottom, top: containerTop } = document.body.getBoundingClientRect()
 
         return (
-            top >= 0 || 
-            bottom - window.innerHeight <= 0
+            ( this.direction && ( (top >= 0 && containerTop !== 0) || bottom - window.innerHeight < 0 ) ) ||
+            ( !this.direction && ( (bottom - window.innerHeight <= 0 && containerBottom - window.innerHeight !== 0) || top > 0 ) )
         )
     }
 

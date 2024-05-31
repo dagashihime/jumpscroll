@@ -17,7 +17,7 @@ class OptionsState {
     set adjustScrollBehavior(value: Options['adjustScrollBehavior']) {
         this.props.adjustScrollBehavior = value
 
-        if(value === true) { document.documentElement.style.scrollBehavior = 'smooth' }
+        document.documentElement.style.scrollBehavior = value ? 'smooth' : 'auto'
     }
 
     set debug(value: Options['debug']) {

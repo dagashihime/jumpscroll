@@ -34,8 +34,16 @@ const listen: typeof JumpScroll['listen'] = input=> {
 
     if(!jump.isInitialized) jump.init()
 
+    let lastScrollY = window.scrollY
+    window.addEventListener('scroll', ()=> {
+        jump.direction = lastScrollY > window.scrollY
+
+        lastScrollY = window.scrollY
+    })
+
     window.addEventListener('wheel', e=> {
         jump.direction = e.deltaY < 0
+
         jump.updateCurrent()
 
         if(jump.inPosition) {
